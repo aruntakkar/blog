@@ -7,7 +7,7 @@ from django.core.urlresolvers import reverse
 class PublishedManager(models.Manager):
 
     def get_queryset(self):
-        print(self)
+        # Here self is blog is blog.post.published
         return super(PublishedManager, self).get_queryset().filter(status='published')
 
 

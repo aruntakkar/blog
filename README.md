@@ -6,3 +6,11 @@ Using Every Possible thing in Django
 * Customize the admin site.
 
 * Proper Usage of Django ORM API for Database access Provided by Model.
+
+* Usage of Queryset and Managers
+
+* Canonical URL's for models
+
+* Django Pagination
+
+* Class Based View
