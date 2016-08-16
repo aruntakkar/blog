@@ -13,13 +13,3 @@
 * ~~Django Pagination~~
 
 * ~~Class Based View~~
-
-* Sending emails with Django
-
-* Creating forms and Handling them in Views
-
-* Creating forms from models
-
-* Integrating third-party applications
-
-* Building Complex QuerySets
