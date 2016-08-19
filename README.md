@@ -16,9 +16,9 @@
 
 TODO
 
-* Sending e-mails with Django
+* ~~Sending e-mails with Django~~
 
-* Creating forms and handling them in views
+* ~~Creating forms and handling them in views~~
 
 * Creating forms from models
 
