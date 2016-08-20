@@ -3,24 +3,10 @@ from django.views.generic import ListView
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from django.core.mail import send_mail
+from django.db.models import Count
 from .models import Post, Comment
 from .forms import EmailPostForm, CommentForm
 from taggit.models import Tag
-
-# def post_list(request):
-#     object_list = Post.published.all()
-#     paginator = Paginator(object_list, 3)  # 3 posts in each Page
-#     page = request.GET.get('page')
-#     try:
-#         posts = paginator.page(page)
-#     except PageNotAnInteger:
-#         # if page is not an integer deliver the first page
-#         posts = paginator.page(1)
-#     except EmptyPage:
-#         # if page is out of range deliver the last page of results
-#         posts = paginator.page(paginator.num_pages)
-# return render(request, 'blog/post/list.html', {'page': page, 'posts':
-# posts})
 
 
 def post_list(request, tag_slug=None):
@@ -42,7 +28,7 @@ def post_list(request, tag_slug=None):
         # if page is out of range deliver the last page of results
         posts = paginator.page(paginator.num_pages)
     return render(request, 'blog/post/list.html', {'page': page, 'posts':
-                                                       posts, 'tag': tag})
+                                                   posts, 'tag': tag})
 
 
 class PostListView(ListView):
@@ -71,8 +57,28 @@ def post_detail(request, year, month, day, post):
             new_comment.save()
     else:
         comment_form = CommentForm()
-    return render(request, 'blog/post/detail.html', {'post': post, 'comments': comments, 'comment_form': comment_form})
+        # list of Similar Posts
+        # We retrive a Python list of ID's for the tags of the current post
+        # The value_list() QuerySet returns tuples with the values for the given fields,
+        # We are passing it flat=True to get a flat list like [1,2,3,....]
+        post_tags_ids = post.tags.values_list('id', flat=True)
 
+        # We get all the posts that contain any of these tags excluding the
+        # current post itself.
+        similar_posts = Post.published.filter(tags__in=post_tags_ids)\
+            .exclude(id=post.id)
+
+        # We Use the Count aggregation function to generate a calculated field same_tags
+        # that contains the number of tags shared with all the tags queried.
+
+        # We order the result by the number of shared tags(descendant order) and
+        # publish to display recent posts first for the posts with the same number
+        # of shared tags, we slice the results to retreive only the fist four
+        # posts.
+
+        similar_posts = similar_posts.annotate(same_tags=Count('tags'))\
+            .order_by('-same_tags', '-publish')[:4]
+    return render(request, 'blog/post/detail.html', {'post': post, 'comments': comments, 'comment_form': comment_form, 'similar_posts': similar_posts})
 
 
 def post_share(request, post_id):
