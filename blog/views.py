@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 from .models import Post, Comment
 from .forms import EmailPostForm, CommentForm
-
+from taggit.models import Tag
 
 # def post_list(request):
 #     object_list = Post.published.all()
@@ -21,6 +21,28 @@ from .forms import EmailPostForm, CommentForm
 #         posts = paginator.page(paginator.num_pages)
 # return render(request, 'blog/post/list.html', {'page': page, 'posts':
 # posts})
+
+
+def post_list(request, tag_slug=None):
+    object_list = Post.published.all()
+    tag = None
+
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        object_list = object_list.filter(tags__in=[tag])
+
+    paginator = Paginator(object_list, 3)  # 3 posts in each Page
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        # if page is not an integer deliver the first page
+        posts = paginator.page(1)
+    except EmptyPage:
+        # if page is out of range deliver the last page of results
+        posts = paginator.page(paginator.num_pages)
+    return render(request, 'blog/post/list.html', {'page': page, 'posts':
+                                                       posts, 'tag': tag})
 
 
 class PostListView(ListView):
@@ -51,7 +73,6 @@ def post_detail(request, year, month, day, post):
         comment_form = CommentForm()
     return render(request, 'blog/post/detail.html', {'post': post, 'comments': comments, 'comment_form': comment_form})
 
-    # return render(request, 'blog/post/detail.html', {'post': post})
 
 
 def post_share(request, post_id):
