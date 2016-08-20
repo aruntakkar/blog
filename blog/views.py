@@ -3,9 +3,9 @@ from django.views.generic import ListView
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from django.core.mail import send_mail
-from .models import Post
-from .forms import EmailPostForm
-
+from .models import Post, Comment
+from .forms import EmailPostForm, CommentForm
+from taggit.models import Tag
 
 # def post_list(request):
 #     object_list = Post.published.all()
@@ -23,6 +23,28 @@ from .forms import EmailPostForm
 # posts})
 
 
+def post_list(request, tag_slug=None):
+    object_list = Post.published.all()
+    tag = None
+
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        object_list = object_list.filter(tags__in=[tag])
+
+    paginator = Paginator(object_list, 3)  # 3 posts in each Page
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        # if page is not an integer deliver the first page
+        posts = paginator.page(1)
+    except EmptyPage:
+        # if page is out of range deliver the last page of results
+        posts = paginator.page(paginator.num_pages)
+    return render(request, 'blog/post/list.html', {'page': page, 'posts':
+                                                       posts, 'tag': tag})
+
+
 class PostListView(ListView):
     queryset = Post.published.all()
     context_object_name = 'posts'
@@ -33,7 +55,24 @@ class PostListView(ListView):
 def post_detail(request, year, month, day, post):
     post = get_object_or_404(Post, slug=post, status='published',
                              publish__year=year, publish__month=month, publish__day=day)
-    return render(request, 'blog/post/detail.html', {'post': post})
+
+    # list of active comments for this post
+    comments = post.comments.filter(active=True)
+
+    if request.method == 'POST':
+        # A method was posted
+        comment_form = CommentForm(data=request.POST)
+        if comment_form.is_valid():
+            # create comment object but don't save to database yet
+            new_comment = comment_form.save(commit=False)
+            # Assign the Current post to the Comment
+            new_comment.post = post
+            # save the comment to the Database
+            new_comment.save()
+    else:
+        comment_form = CommentForm()
+    return render(request, 'blog/post/detail.html', {'post': post, 'comments': comments, 'comment_form': comment_form})
+
 
 
 def post_share(request, post_id):
@@ -46,11 +85,13 @@ def post_share(request, post_id):
         # Form was submitted
         form = EmailPostForm(request.POST)
         if form.is_valid():
-        	# Form fields passed Validation
+                # Form fields passed Validation
             cd = form.cleaned_data
             post_url = request.build_absolute_uri(post.get_absolute_url())
-            subject = '{} ({}) recommends you reading: "{}"'.format(cd['name'], cd['email'], post.title)
-            message = 'Read "{}" at {}\n\n{}\'s comments: {}'. format(post.title, post_url, cd['name'], cd['comments'])
+            subject = '{} ({}) recommends you reading: "{}"'.format(
+                cd['name'], cd['email'], post.title)
+            message = 'Read "{}" at {}\n\n{}\'s comments: {}'. format(
+                post.title, post_url, cd['name'], cd['comments'])
             send_mail(subject, message, 'your_email@gmail.com', [cd['to']])
             sent = True
     else:
