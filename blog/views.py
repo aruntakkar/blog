@@ -4,9 +4,9 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.conf import settings
 from django.core.mail import send_mail
 from django.db.models import Count
-from .models import Post, Comment
-from .forms import EmailPostForm, CommentForm
 from taggit.models import Tag
+from .forms import EmailPostForm, CommentForm
+from .models import Post, Comment
 
 
 def post_list(request, tag_slug=None):
