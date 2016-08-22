@@ -24,4 +24,10 @@
 
 * Building complex QuerySets
 
+TODO:-
 
+* Creating Custom template tags & filters
+
+* Adding a Sitemap and a post feed.
+
+* Building a Search engine with Solr and Haystack.
