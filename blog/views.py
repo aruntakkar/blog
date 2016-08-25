@@ -57,27 +57,27 @@ def post_detail(request, year, month, day, post):
             new_comment.save()
     else:
         comment_form = CommentForm()
-        # list of Similar Posts
-        # We retrive a Python list of ID's for the tags of the current post
-        # The value_list() QuerySet returns tuples with the values for the given fields,
-        # We are passing it flat=True to get a flat list like [1,2,3,....]
-        post_tags_ids = post.tags.values_list('id', flat=True)
+    # list of Similar Posts
+    # We retrive a Python list of ID's for the tags of the current post
+    # The value_list() QuerySet returns tuples with the values for the given fields,
+    # We are passing it flat=True to get a flat list like [1,2,3,....]
+    post_tags_ids = post.tags.values_list('id', flat=True)
 
-        # We get all the posts that contain any of these tags excluding the
-        # current post itself.
-        similar_posts = Post.published.filter(tags__in=post_tags_ids)\
-            .exclude(id=post.id)
+    # We get all the posts that contain any of these tags excluding the
+    # current post itself.
+    similar_posts = Post.published.filter(tags__in=post_tags_ids)\
+        .exclude(id=post.id)
 
-        # We Use the Count aggregation function to generate a calculated field same_tags
-        # that contains the number of tags shared with all the tags queried.
+    # We Use the Count aggregation function to generate a calculated field same_tags
+    # that contains the number of tags shared with all the tags queried.
 
-        # We order the result by the number of shared tags(descendant order) and
-        # publish to display recent posts first for the posts with the same number
-        # of shared tags, we slice the results to retreive only the fist four
-        # posts.
+    # We order the result by the number of shared tags(descendant order) and
+    # publish to display recent posts first for the posts with the same number
+    # of shared tags, we slice the results to retreive only the fist four
+    # posts.
 
-        similar_posts = similar_posts.annotate(same_tags=Count('tags'))\
-            .order_by('-same_tags', '-publish')[:4]
+    similar_posts = similar_posts.annotate(same_tags=Count('tags'))\
+        .order_by('-same_tags', '-publish')[:4]
     return render(request, 'blog/post/detail.html', {'post': post, 'comments': comments, 'comment_form': comment_form, 'similar_posts': similar_posts})
 
 
